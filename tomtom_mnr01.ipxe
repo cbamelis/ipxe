@@ -1,0 +1,4 @@
+#!ipxe
+dhcp
+chain http://10.1.68.244/pxe/boot/iPXE/menu/choose_pxe.ipxe
+
