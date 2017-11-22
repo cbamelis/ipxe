@@ -13,7 +13,6 @@ test -d ${DEST} && rm -rf ${DEST}
 test -d ${DEST}/${CUSTOM} || mkdir -p ${DEST}/${CUSTOM}
 make clean
 for IMG in ${WANTED_IMGS}; do
-  IMG=${IMG}
   make ${IMG} && mv ${IMG} ${DEST} || rm ${IMG}
   for CUSTOM in ${WANTED_EMBEDS}; do
     test -d ${DEST}/${CUSTOM} || mkdir -p ${DEST}/${CUSTOM}
