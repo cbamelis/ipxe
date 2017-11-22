@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xe
 WANTED_IMGS="bin/ipxe.kpxe bin/ipxe.lkrn bin/ipxe.iso bin/ipxe.usb bin/ipxe.dsk bin/undionly.kpxe bin-x86_64-efi/ipxe.efi bin-x86_64-efi/snponly.efi"
 WANTED_EMBEDS="bamelis_be choose tomtom_mnr01"
 
