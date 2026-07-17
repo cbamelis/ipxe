@@ -101,6 +101,7 @@ REQUIRING_SYMBOL ( keymap_setting );
 
 /* Require all known keyboard maps */
 REQUIRE_KEYMAP ( al );
+REQUIRE_KEYMAP ( be );
 REQUIRE_KEYMAP ( by );
 REQUIRE_KEYMAP ( cf );
 REQUIRE_KEYMAP ( cz );
