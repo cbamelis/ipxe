@@ -1,0 +1,12 @@
+#!ipxe
+
+:start
+ifclose
+ifopen
+ifstat
+ifconf --configurator dhcp --timeout 15000 && isset ${filename} && route || goto retry
+autoboot && exit || goto retry
+
+:retry
+prompt --key 0x02 --timeout 5000 Press Ctrl-B for the iPXE shell, retrying otherwise... && shell || goto start
+goto start

@@ -1,0 +1,8 @@
+#!ipxe
+:dhcp
+dhcp && goto boot
+sleep 3
+goto dhcp
+
+:boot
+chain http://boot.bamelis.be || shell
