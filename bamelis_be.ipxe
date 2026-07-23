@@ -1,8 +1,12 @@
 #!ipxe
+set host boot.bamelis.be
+set http-root  http://${host}
+set https-root https://${host}
+
 :dhcp
 dhcp && goto boot
 sleep 3
 goto dhcp
 
 :boot
-chain http://boot.bamelis.be || shell
+chain ${http-root} || shell
