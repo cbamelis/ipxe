@@ -25,7 +25,10 @@ FILE_SECBOOT ( PERMITTED );
 #if defined ( PLATFORM_efi )
   #define USB_EFI		/* Provide EFI_USB_IO_PROTOCOL interface */
   //#define USB_HCD_USBIO	/* Very slow EFI USB pseudo-host controller */
-  #undef USB_KEYBOARD		/* Use built-in EFI keyboard driver */
+  /* Keep USB_KEYBOARD enabled under EFI: iPXE's native xHCI driver
+   * takes the USB controller from the firmware to drive USB NICs
+   * (e.g. the RTL8153 CDC-ECM adapter), which also disables the
+   * firmware keyboard, so iPXE must drive USB keyboards itself. */
 #endif
 
 #include <config/named.h>
