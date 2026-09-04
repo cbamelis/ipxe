@@ -51,13 +51,16 @@ Add a new one by dropping `<name>.ipxe` at the repo root and adding `<name>` to 
 
 The `cba` branch adds commands **not present in upstream iPXE** — so they are not on ipxe.org/cmd and must be documented here. When merging to/from upstream, keep them.
 
-- **`islt <value1> <value2>`** and **`isgt <value1> <value2>`** (`src/core/exec.c`) — numeric less-than / greater-than, the numeric counterpart to upstream's string-only `iseq`. Both arguments are parsed with `strtoul` (auto-detected base, so decimal and `0x…` both work); a non-numeric argument fails with an error rather than being read as `0`. Return success when the comparison holds, failure otherwise. Intended for RAM/CPU guards in boot menus, e.g.:
+- **`islt` / `isgt` / `isle` / `isge` `<value1> <value2>`** (`src/core/exec.c`) — numeric `<` / `>` / `<=` / `>=`, the numeric counterpart to upstream's string-only `iseq`. Both arguments are parsed as unsigned integers via `parse_integer` (auto-detected base, so decimal and `0x…` both work); a non-numeric argument fails with an error rather than being read as `0`. Return success when the comparison holds, failure otherwise. (Negation needs no command: `||` already inverts, e.g. `cpuid --ext 29 || item linux32`.)
+
+  Intended for guards in boot menus, e.g.:
 
   ```
-  isgt ${memsize} 3999 && goto heavy || goto light
+  isge ${memsize} 4096 && cpuid --ext 29 && item win11 Windows 11 (x64, 4GB+)
+  cpuid --ext 29 || item linux32 Linux 32-bit
   ```
 
-  `${memsize}` needs `MEMMAP_SETTINGS`; `${cpuid/...}` needs `CPUID_SETTINGS` (already on for the EFI build).
+  `${memsize}` needs `MEMMAP_SETTINGS`; `${cpuid/...}` needs `CPUID_SETTINGS` (already on for the EFI build). `cpuid --ext 29` tests 64-bit (long mode) support.
 
 ## Notes
 

@@ -538,19 +538,19 @@ static int iseq_exec ( int argc, char **argv ) {
 /** "iseq" command */
 COMMAND ( iseq, iseq_exec );
 
-/** "islt"/"isgt" options */
+/** Numeric comparison options */
 struct isnum_options {};
 
-/** "islt"/"isgt" option list */
+/** Numeric comparison option list */
 static struct option_descriptor isnum_opts[] = {};
 
-/** "islt"/"isgt" command descriptor */
+/** Numeric comparison command descriptor */
 static struct command_descriptor isnum_cmd =
 	COMMAND_DESC ( struct isnum_options, isnum_opts, 2, 2,
 		       "<value1> <value2>" );
 
 /**
- * Parse two numeric arguments for "islt"/"isgt"
+ * Parse two numeric arguments for numeric comparison commands
  *
  * @v argc		Argument count
  * @v argv		Argument list
@@ -558,23 +558,20 @@ static struct command_descriptor isnum_cmd =
  * @v second		Second parsed value to fill in
  * @ret rc		Return status code
  */
-static int isnum_parse ( int argc, char **argv, unsigned long *first,
-			 unsigned long *second ) {
+static int isnum_parse ( int argc, char **argv, unsigned int *first,
+			 unsigned int *second ) {
 	struct isnum_options opts;
-	char *endp;
 	int rc;
 
 	/* Parse options */
 	if ( ( rc = parse_options ( argc, argv, &isnum_cmd, &opts ) ) != 0 )
 		return rc;
 
-	/* Parse numeric values (auto-detecting base, e.g. "0x...") */
-	*first = strtoul ( argv[optind], &endp, 0 );
-	if ( ( endp == argv[optind] ) || ( *endp != '\0' ) )
-		return -EINVAL;
-	*second = strtoul ( argv[ optind + 1 ], &endp, 0 );
-	if ( ( endp == argv[ optind + 1 ] ) || ( *endp != '\0' ) )
-		return -EINVAL;
+	/* Parse numeric values */
+	if ( ( rc = parse_integer ( argv[optind], first ) ) != 0 )
+		return rc;
+	if ( ( rc = parse_integer ( argv[ optind + 1 ], second ) ) != 0 )
+		return rc;
 
 	return 0;
 }
@@ -587,8 +584,8 @@ static int isnum_parse ( int argc, char **argv, unsigned long *first,
  * @ret rc		Return status code
  */
 static int islt_exec ( int argc, char **argv ) {
-	unsigned long first;
-	unsigned long second;
+	unsigned int first;
+	unsigned int second;
 	int rc;
 
 	/* Parse numeric arguments */
@@ -610,8 +607,8 @@ COMMAND ( islt, islt_exec );
  * @ret rc		Return status code
  */
 static int isgt_exec ( int argc, char **argv ) {
-	unsigned long first;
-	unsigned long second;
+	unsigned int first;
+	unsigned int second;
 	int rc;
 
 	/* Parse numeric arguments */
@@ -624,6 +621,52 @@ static int isgt_exec ( int argc, char **argv ) {
 
 /** "isgt" command */
 COMMAND ( isgt, isgt_exec );
+
+/**
+ * "isle" command
+ *
+ * @v argc		Argument count
+ * @v argv		Argument list
+ * @ret rc		Return status code
+ */
+static int isle_exec ( int argc, char **argv ) {
+	unsigned int first;
+	unsigned int second;
+	int rc;
+
+	/* Parse numeric arguments */
+	if ( ( rc = isnum_parse ( argc, argv, &first, &second ) ) != 0 )
+		return rc;
+
+	/* Return success iff first value is less than or equal to second */
+	return ( ( first <= second ) ? 0 : -ERANGE );
+}
+
+/** "isle" command */
+COMMAND ( isle, isle_exec );
+
+/**
+ * "isge" command
+ *
+ * @v argc		Argument count
+ * @v argv		Argument list
+ * @ret rc		Return status code
+ */
+static int isge_exec ( int argc, char **argv ) {
+	unsigned int first;
+	unsigned int second;
+	int rc;
+
+	/* Parse numeric arguments */
+	if ( ( rc = isnum_parse ( argc, argv, &first, &second ) ) != 0 )
+		return rc;
+
+	/* Return success iff first value is greater than or equal to second */
+	return ( ( first >= second ) ? 0 : -ERANGE );
+}
+
+/** "isge" command */
+COMMAND ( isge, isge_exec );
 
 /** "sleep" options */
 struct sleep_options {};
