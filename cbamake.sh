@@ -3,13 +3,11 @@ WANTED_IMGS_BIOS="bin/ipxe.kpxe bin/ipxe.lkrn bin/ipxe.iso bin/ipxe.usb bin/ipxe
 WANTED_IMGS_UEFI="bin-x86_64-efi/ipxe.iso bin-x86_64-efi/ipxe.usb bin-x86_64-efi/ipxe.efi bin-x86_64-efi/snponly.efi"
 WANTED_EMBEDS="autoboot_retry bamelis_be"
 
-#WANTED_IMGS="bin/ipxe.kpxe bin/ipxe.usb bin-x86_64-efi/ipxe.efi"
-#WANTED_EMBEDS="choose"
-
 DEST=../build
-
-# restore swapped config headers even on interrupt/failure
-trap 'git -C src checkout config/console.h config/general.h 2>/dev/null || true' EXIT
+# Fork configuration lives in src/config/bamelis/ and is selected with
+# CONFIG=bamelis. The BIOS/UEFI difference is handled inside that config
+# via PLATFORM_efi, so the upstream config headers stay untouched.
+CFG=bamelis
 
 # prepare
 pushd src
@@ -17,34 +15,24 @@ test -d ${DEST} && rm -rf ${DEST}
 make clean
 
 # BIOS builds
-cp ./config/console.h.bios ./config/console.h
-cp ./config/general.h.bios ./config/general.h
 mkdir -p ${DEST}/bios
 for IMG in ${WANTED_IMGS_BIOS}; do
-  IMG=${IMG}
-  make ${IMG} && mv ${IMG} ${DEST}/bios || rm ${IMG}
+  make CONFIG=${CFG} ${IMG} && mv ${IMG} ${DEST}/bios || rm -f ${IMG}
   for CUSTOM in ${WANTED_EMBEDS}; do
     mkdir -p ${DEST}/bios/${CUSTOM}
-    make ${IMG} EMBED=../${CUSTOM}.ipxe && mv ${IMG} ${DEST}/bios/${CUSTOM} || rm ${IMG}
+    make CONFIG=${CFG} ${IMG} EMBED=../${CUSTOM}.ipxe && mv ${IMG} ${DEST}/bios/${CUSTOM} || rm -f ${IMG}
   done
 done
-git checkout ./config/console.h
-git checkout ./config/general.h
 
 # UEFI builds
-cp ./config/console.h.uefi ./config/console.h
-cp ./config/general.h.uefi ./config/general.h
 mkdir -p ${DEST}/uefi
 for IMG in ${WANTED_IMGS_UEFI}; do
-  IMG=${IMG}
-  make ${IMG} && mv ${IMG} ${DEST}/uefi || rm ${IMG}
+  make CONFIG=${CFG} ${IMG} && mv ${IMG} ${DEST}/uefi || rm -f ${IMG}
   for CUSTOM in ${WANTED_EMBEDS}; do
     mkdir -p ${DEST}/uefi/${CUSTOM}
-    make ${IMG} EMBED=../${CUSTOM}.ipxe && mv ${IMG} ${DEST}/uefi/${CUSTOM} || rm ${IMG}
+    make CONFIG=${CFG} ${IMG} EMBED=../${CUSTOM}.ipxe && mv ${IMG} ${DEST}/uefi/${CUSTOM} || rm -f ${IMG}
   done
 done
-git checkout ./config/console.h
-git checkout ./config/general.h
 
 # make UEFI bootable disk image
 MNT=../mnt

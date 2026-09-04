@@ -13,17 +13,20 @@ For iPXE's own architecture, drivers, and scripting language, see http://ipxe.or
 Standard iPXE build lives under `src/` (`cd src && make`). Everything below is the fork-specific layer.
 
 - **Full build:** run `./cbamake.sh` from the repo root. It cleans `src/`, builds all wanted BIOS images, then all UEFI images, embedding each script in `WANTED_EMBEDS`, and writes everything to `build/{bios,uefi}/[<embed-name>]/`. It also produces a UEFI-bootable floppy image (`ipxe.dsk`) via `mkfs.msdos` + `sudo mount` — this step needs sudo.
-- **Single image (BIOS):** `cd src && make bin/ipxe.usb`
-- **Single image (UEFI):** `cd src && make bin-x86_64-efi/ipxe.efi`
-- **With an embedded script:** append `EMBED=../<name>.ipxe`, e.g. `cd src && make bin/ipxe.kpxe EMBED=../autoboot_retry.ipxe`
+- **Single image (BIOS):** `cd src && make CONFIG=bamelis bin/ipxe.usb`
+- **Single image (UEFI):** `cd src && make CONFIG=bamelis bin-x86_64-efi/ipxe.efi`
+- **With an embedded script:** append `EMBED=../<name>.ipxe`, e.g. `cd src && make CONFIG=bamelis bin/ipxe.kpxe EMBED=../autoboot_retry.ipxe`
 
-### Build-config gotcha (important)
+### Build config: the `bamelis` named config
 
-`src/config/console.h` and `src/config/general.h` are the files the Makefile actually reads, but the real, version-controlled variants are `*.h.bios` and `*.h.uefi`. `cbamake.sh` copies the right variant over the plain file before each build phase, then runs `git checkout` to restore it. So `console.h`/`general.h` are effectively scratch files.
+All fork settings live in `src/config/bamelis/` and are selected with `make CONFIG=bamelis` (iPXE's named-config mechanism, see `src/config/named.h`). Each upstream `config/X.h` does `#include NAMED_CONFIG(X.h)`, so `config/bamelis/X.h` is applied *after* the upstream defaults. The upstream `config/*.h` files stay untouched — never edit them for fork settings.
 
-**When building a single image by hand, first copy the correct variant** (`cp config/general.h.bios config/general.h`, etc.) or you'll build with stale config. The only real difference is in `general.h`: BIOS enables `IMAGE_MULTIBOOT`/`IMAGE_PXE`/`IMAGE_BZIMAGE`/`IMAGE_COMBOOT`; UEFI enables `IMAGE_EFI` instead. The two `console.h` variants are currently identical.
-
-To change build config, edit the `.h.bios` / `.h.uefi` variants — never the plain `.h` files (they get overwritten and reset).
+- Settings are forced with `#undef` + `#define`, so the upstream default does not matter.
+- The BIOS/UEFI difference (`IMAGE_EFI` vs `IMAGE_MULTIBOOT`/`IMAGE_PXE`/`IMAGE_BZIMAGE`/`IMAGE_COMBOOT`) is handled inside `config/bamelis/general.h` with `#if defined ( PLATFORM_efi )`.
+- No include guards in these files: iPXE includes config headers more than once to build the config fingerprint.
+- **A named config must be complete.** `config/bamelis/` needs a file for *every* upstream header that includes `NAMED_CONFIG(...)` (`grep -l NAMED_CONFIG src/config/*.h`), even if it only holds a comment. A missing one makes `make` loop forever in the `[DEPS]` phase: `gcc -MP` writes an empty phony rule for the missing header into every `.d` file, make treats it as "remade" on each pass, and regenerates all dependencies again. Debug this kind of loop with `make --debug=m,v` — without the `m` flag make hides the makefile-remake phase.
+- `src/config/local/bamelis/*.h` are auto-created empty files (gitignored); leave them alone.
+- Forgetting `CONFIG=bamelis` gives a plain upstream build without the fork settings; `bin/.config.list` records which config the tree was last built with, and switching triggers a full rebuild.
 
 ## Keyboard maps
 
