@@ -538,6 +538,93 @@ static int iseq_exec ( int argc, char **argv ) {
 /** "iseq" command */
 COMMAND ( iseq, iseq_exec );
 
+/** "islt"/"isgt" options */
+struct isnum_options {};
+
+/** "islt"/"isgt" option list */
+static struct option_descriptor isnum_opts[] = {};
+
+/** "islt"/"isgt" command descriptor */
+static struct command_descriptor isnum_cmd =
+	COMMAND_DESC ( struct isnum_options, isnum_opts, 2, 2,
+		       "<value1> <value2>" );
+
+/**
+ * Parse two numeric arguments for "islt"/"isgt"
+ *
+ * @v argc		Argument count
+ * @v argv		Argument list
+ * @v first		First parsed value to fill in
+ * @v second		Second parsed value to fill in
+ * @ret rc		Return status code
+ */
+static int isnum_parse ( int argc, char **argv, unsigned long *first,
+			 unsigned long *second ) {
+	struct isnum_options opts;
+	char *endp;
+	int rc;
+
+	/* Parse options */
+	if ( ( rc = parse_options ( argc, argv, &isnum_cmd, &opts ) ) != 0 )
+		return rc;
+
+	/* Parse numeric values (auto-detecting base, e.g. "0x...") */
+	*first = strtoul ( argv[optind], &endp, 0 );
+	if ( ( endp == argv[optind] ) || ( *endp != '\0' ) )
+		return -EINVAL;
+	*second = strtoul ( argv[ optind + 1 ], &endp, 0 );
+	if ( ( endp == argv[ optind + 1 ] ) || ( *endp != '\0' ) )
+		return -EINVAL;
+
+	return 0;
+}
+
+/**
+ * "islt" command
+ *
+ * @v argc		Argument count
+ * @v argv		Argument list
+ * @ret rc		Return status code
+ */
+static int islt_exec ( int argc, char **argv ) {
+	unsigned long first;
+	unsigned long second;
+	int rc;
+
+	/* Parse numeric arguments */
+	if ( ( rc = isnum_parse ( argc, argv, &first, &second ) ) != 0 )
+		return rc;
+
+	/* Return success iff first value is less than second */
+	return ( ( first < second ) ? 0 : -ERANGE );
+}
+
+/** "islt" command */
+COMMAND ( islt, islt_exec );
+
+/**
+ * "isgt" command
+ *
+ * @v argc		Argument count
+ * @v argv		Argument list
+ * @ret rc		Return status code
+ */
+static int isgt_exec ( int argc, char **argv ) {
+	unsigned long first;
+	unsigned long second;
+	int rc;
+
+	/* Parse numeric arguments */
+	if ( ( rc = isnum_parse ( argc, argv, &first, &second ) ) != 0 )
+		return rc;
+
+	/* Return success iff first value is greater than second */
+	return ( ( first > second ) ? 0 : -ERANGE );
+}
+
+/** "isgt" command */
+COMMAND ( isgt, isgt_exec );
+
 /** "sleep" options */
 struct sleep_options {};
 

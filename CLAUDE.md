@@ -47,6 +47,18 @@ Add a new one by dropping `<name>.ipxe` at the repo root and adding `<name>` to 
 
 **Gotcha — iPXE aborts a script on the first failing command.** iPXE terminates script execution as soon as any command returns non-zero, *unless* that command is followed by `||` (confirmed in `image/script.c`, `terminate_on_exit_or_failure`). Guard every fallible line: `chain <url> || shell`, `dhcp || goto retry`, and `autoboot && exit || goto retry`. A bare `autoboot && exit` silently kills the script the moment a boot attempt fails (the lines after it never run) — this is exactly the trap that broke `autoboot_retry.ipxe`.
 
+## Custom iPXE commands
+
+The `cba` branch adds commands **not present in upstream iPXE** — so they are not on ipxe.org/cmd and must be documented here. When merging to/from upstream, keep them.
+
+- **`islt <value1> <value2>`** and **`isgt <value1> <value2>`** (`src/core/exec.c`) — numeric less-than / greater-than, the numeric counterpart to upstream's string-only `iseq`. Both arguments are parsed with `strtoul` (auto-detected base, so decimal and `0x…` both work); a non-numeric argument fails with an error rather than being read as `0`. Return success when the comparison holds, failure otherwise. Intended for RAM/CPU guards in boot menus, e.g.:
+
+  ```
+  isgt ${memsize} 3999 && goto heavy || goto light
+  ```
+
+  `${memsize}` needs `MEMMAP_SETTINGS`; `${cpuid/...}` needs `CPUID_SETTINGS` (already on for the EFI build).
+
 ## Notes
 
 - `*.orig` files (`cbamake.sh.orig`, `src/hci/keymap/keymap_be.c.orig`) are leftover merge artifacts, not source — ignore/clean them.
