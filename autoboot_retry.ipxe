@@ -1,12 +1,42 @@
 #!ipxe
 
+# Retry DHCP and autoboot with an escalating strategy: a few quick attempts
+# first, then patient ones, then a shell.  Press Ctrl-B during the pause to
+# get the iPXE shell at any time.
+#
+# ${attempt} needs an explicit numeric type, otherwise "inc" fails with
+# "Operation not supported".  Every guard ends in "||", because a failing
+# command without it terminates the script.
+
+set attempt:int32 0
+
 :start
-ifclose
-ifopen
-ifstat
-ifconf --configurator dhcp --timeout 15000 && isset ${filename} && route || goto retry
+inc attempt
+ifclose ||
+ifopen ||
+ifstat ||
+numlt ${attempt} 4 && goto quick ||
+numlt ${attempt} 12 && goto patient ||
+goto exhausted
+
+:quick
+ifconf --configurator dhcp --timeout 5000 && goto configured ||
+goto retry
+
+:patient
+ifconf --configurator dhcp --timeout 20000 && goto configured ||
+goto retry
+
+:configured
+isset ${filename} && route || goto retry
 autoboot && exit || goto retry
 
 :retry
-prompt --key 0x02 --timeout 5000 Press Ctrl-B for the iPXE shell, retrying otherwise... && shell || goto start
+prompt --key 0x02 --timeout 5000 Attempt ${attempt} failed. Press Ctrl-B for the iPXE shell, retrying otherwise... && shell || goto start
+goto start
+
+:exhausted
+echo No network after ${attempt} attempts
+shell ||
+set attempt:int32 0
 goto start

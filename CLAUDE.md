@@ -42,7 +42,7 @@ The keymap format is **ASCII-only (0x00–0x7f)**: `key_remap()` masks output to
 
 iPXE `#!ipxe` scripts at the repo root, embedded into the binary at build time:
 
-- `autoboot_retry.ipxe` — retry DHCP/autoboot loop
+- `autoboot_retry.ipxe` — escalating DHCP/autoboot retry loop: three quick attempts (5s DHCP timeout), then eight patient ones (20s), then a shell. Ctrl-B during the pause opens the shell at any point.
 - `bamelis_be.ipxe` — chains to `http://boot.bamelis.be`
 - `tomtom_mnr01.ipxe` — chains to an internal TomTom PXE menu
 
@@ -75,6 +75,10 @@ The `cba` branch adds commands **not present in upstream iPXE** — so they are 
   ```
 
   `${memsize}` needs `MEMMAP_SETTINGS`; `${cpuid/...}` needs `CPUID_SETTINGS` (already on for the EFI build). `cpuid --ext 29` tests 64-bit (long mode) support.
+
+  **Counters need an explicit numeric type.** `inc <setting>` fails with `Operation not supported` unless the setting has one: use `set attempt:int32 0` (upstream's `config/cloud/aws.ipxe` uses `:int8`). A counter plus `numlt` expresses an escalating retry loop that an equality test cannot — see `autoboot_retry.ipxe`. An `iseq ${attempt} 10` loop guard also spins forever if the counter ever skips 10; `numlt` cannot.
+
+  **Hex-rendered settings compare correctly**, because `parse_integer` auto-detects the base. `${unixtime}` prints as `0x6aa16bc3`, and `numlt ${unixtime} 1735689600` still works — `iseq` would need the exact hex string. `${unixtime}` comes from the RTC, so it is available before the network is up.
 
   **Gotcha — `||` as negation must end the line.** iPXE evaluates `&&` and `||` strictly from left to right with no precedence, so the action in a failure branch may not be followed by more conditions. Confirmed in qemu: `numlt 3000 4096 || echo B && echo C` runs only `C` (condition true, so `B` is skipped but the chain still succeeds), while `numlt 5000 4096 || echo B && echo C` runs both. The forms in the table above avoid this by keeping a *positive* test on both sides of `||`, which composes safely with a trailing `&& <action>`.
 
