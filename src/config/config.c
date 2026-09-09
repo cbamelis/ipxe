@@ -288,8 +288,8 @@ REQUIRE_OBJECT ( neighbour_cmd );
 #ifdef PING_CMD
 REQUIRE_OBJECT ( ping_cmd );
 #endif
-#ifdef ISNUM_CMD
-REQUIRE_OBJECT ( isnum_cmd );
+#ifdef NUM_CMD
+REQUIRE_OBJECT ( num_cmd );
 #endif
 #ifdef CONSOLE_CMD
 REQUIRE_OBJECT ( console_cmd );

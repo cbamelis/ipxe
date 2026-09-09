@@ -54,16 +54,29 @@ Add a new one by dropping `<name>.ipxe` at the repo root and adding `<name>` to 
 
 The `cba` branch adds commands **not present in upstream iPXE** — so they are not on ipxe.org/cmd and must be documented here. When merging to/from upstream, keep them.
 
-- **`islt` / `isgt` / `isle` / `isge` `<value1> <value2>`** (`src/core/exec.c`) — numeric `<` / `>` / `<=` / `>=`, the numeric counterpart to upstream's string-only `iseq`. Both arguments are parsed as unsigned integers via `parse_integer` (auto-detected base, so decimal and `0x…` both work); a non-numeric argument fails with an error rather than being read as `0`. Return success when the comparison holds, failure otherwise. (Negation needs no command: `||` already inverts, e.g. `cpuid --ext 29 || item linux32`.)
+- **`numlt` / `numeq` / `numgt` `<value1> <value2>`** (`src/hci/commands/num_cmd.c`, opt-in via `NUM_CMD`) — numeric `<`, `==` and `>`, the numeric counterpart to upstream's string-only `iseq`. Both arguments are parsed as unsigned integers via `parse_integer` (auto-detected base, so `4096` and `0x1000` both work, but a leading zero means octal); a non-numeric argument fails with an error rather than being read as `0`. Return success when the comparison holds, failure otherwise.
+
+  A numeric comparison has three possible outcomes, so these three commands are a complete set — every relation is one or two of them:
+
+  | relation | script |
+  |---|---|
+  | a `<` b | `numlt a b` |
+  | a `==` b | `numeq a b` |
+  | a `>` b | `numgt a b` |
+  | a `<=` b | `numlt a b \|\| numeq a b` |
+  | a `>=` b | `numgt a b \|\| numeq a b` |
+  | a `!=` b | `numlt a b \|\| numgt a b` |
 
   Intended for guards in boot menus, e.g.:
 
   ```
-  isge ${memsize} 4096 && cpuid --ext 29 && item win11 Windows 11 (x64, 4GB+)
+  numgt ${memsize} 4095 && cpuid --ext 29 && item win11 Windows 11 (x64, 4GB+)
   cpuid --ext 29 || item linux32 Linux 32-bit
   ```
 
   `${memsize}` needs `MEMMAP_SETTINGS`; `${cpuid/...}` needs `CPUID_SETTINGS` (already on for the EFI build). `cpuid --ext 29` tests 64-bit (long mode) support.
+
+  **Gotcha — `||` as negation must end the line.** iPXE evaluates `&&` and `||` strictly from left to right with no precedence, so the action in a failure branch may not be followed by more conditions. Confirmed in qemu: `numlt 3000 4096 || echo B && echo C` runs only `C` (condition true, so `B` is skipped but the chain still succeeds), while `numlt 5000 4096 || echo B && echo C` runs both. The forms in the table above avoid this by keeping a *positive* test on both sides of `||`, which composes safely with a trailing `&& <action>`.
 
 ## Notes
 

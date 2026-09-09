@@ -455,7 +455,7 @@ FILE_SECBOOT ( PERMITTED );
 #define ERRFILE_crypto_null	      ( ERRFILE_OTHER | 0x006a0000 )
 #define ERRFILE_ffdhe		      ( ERRFILE_OTHER | 0x006b0000 )
 #define ERRFILE_cbc		      ( ERRFILE_OTHER | 0x006c0000 )
-#define ERRFILE_isnum_cmd	      ( ERRFILE_OTHER | 0x006d0000 )
+#define ERRFILE_num_cmd		      ( ERRFILE_OTHER | 0x006d0000 )
 
 /** @} */
 

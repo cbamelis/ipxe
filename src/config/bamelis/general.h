@@ -18,8 +18,8 @@
 #define NTP_CMD			/* NTP time synchronisation */
 #undef  PING_CMD
 #define PING_CMD		/* Ping command */
-#undef  ISNUM_CMD
-#define ISNUM_CMD		/* Numeric comparison commands (islt/isgt/isle/isge) */
+#undef  NUM_CMD
+#define NUM_CMD			/* Numeric comparison commands (numlt/numeq/numgt) */
 
 /* Image formats: MultiBoot/PXE/bzImage/COMBOOT on BIOS, EFI on UEFI */
 #undef IMAGE_MULTIBOOT
