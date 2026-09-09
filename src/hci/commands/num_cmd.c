@@ -52,6 +52,16 @@ FILE_SECBOOT ( PERMITTED );
  * both branches.
  */
 
+/** Numeric comparison outcomes */
+enum num_outcome {
+	/** First value is less than second value */
+	NUM_LT = 0x0001,
+	/** Values are equal */
+	NUM_EQ = 0x0002,
+	/** First value is greater than second value */
+	NUM_GT = 0x0004,
+};
+
 /** Numeric comparison options */
 struct num_options {};
 
@@ -64,17 +74,18 @@ static struct command_descriptor num_cmd =
 		       "<value1> <value2>" );
 
 /**
- * Parse numeric comparison arguments
+ * Numeric comparison commands
  *
  * @v argc		Argument count
  * @v argv		Argument list
- * @v first		First parsed value to fill in
- * @v second		Second parsed value to fill in
+ * @v permitted		Permitted comparison outcomes
  * @ret rc		Return status code
  */
-static int num_parse ( int argc, char **argv, unsigned int *first,
-		       unsigned int *second ) {
+static int num_exec ( int argc, char **argv, unsigned int permitted ) {
 	struct num_options opts;
+	unsigned int first;
+	unsigned int second;
+	unsigned int outcome;
 	int rc;
 
 	/* Parse options */
@@ -82,79 +93,36 @@ static int num_parse ( int argc, char **argv, unsigned int *first,
 		return rc;
 
 	/* Parse values */
-	if ( ( rc = parse_integer ( argv[optind], first ) ) != 0 )
+	if ( ( rc = parse_integer ( argv[optind], &first ) ) != 0 )
 		return rc;
-	if ( ( rc = parse_integer ( argv[ optind + 1 ], second ) ) != 0 )
-		return rc;
-
-	return 0;
-}
-
-/**
- * "numlt" command
- *
- * @v argc		Argument count
- * @v argv		Argument list
- * @ret rc		Return status code
- */
-static int numlt_exec ( int argc, char **argv ) {
-	unsigned int first;
-	unsigned int second;
-	int rc;
-
-	/* Parse values */
-	if ( ( rc = num_parse ( argc, argv, &first, &second ) ) != 0 )
+	if ( ( rc = parse_integer ( argv[ optind + 1 ], &second ) ) != 0 )
 		return rc;
 
-	/* Return success iff first value is less than second value */
-	return ( ( first < second ) ? 0 : -ERANGE );
+	/* Compare values */
+	outcome = ( ( first < second ) ? NUM_LT :
+		    ( ( first > second ) ? NUM_GT : NUM_EQ ) );
+
+	/* Return success iff outcome is permitted by the command */
+	return ( ( outcome & permitted ) ? 0 : -ERANGE );
 }
 
 /** "numlt" command */
+static int numlt_exec ( int argc, char **argv ) {
+	return num_exec ( argc, argv, NUM_LT );
+}
+
 COMMAND ( numlt, numlt_exec );
 
-/**
- * "numeq" command
- *
- * @v argc		Argument count
- * @v argv		Argument list
- * @ret rc		Return status code
- */
+/** "numeq" command */
 static int numeq_exec ( int argc, char **argv ) {
-	unsigned int first;
-	unsigned int second;
-	int rc;
-
-	/* Parse values */
-	if ( ( rc = num_parse ( argc, argv, &first, &second ) ) != 0 )
-		return rc;
-
-	/* Return success iff values are equal */
-	return ( ( first == second ) ? 0 : -ERANGE );
+	return num_exec ( argc, argv, NUM_EQ );
 }
 
-/** "numeq" command */
 COMMAND ( numeq, numeq_exec );
 
-/**
- * "numgt" command
- *
- * @v argc		Argument count
- * @v argv		Argument list
- * @ret rc		Return status code
- */
+/** "numgt" command */
 static int numgt_exec ( int argc, char **argv ) {
-	unsigned int first;
-	unsigned int second;
-	int rc;
-
-	/* Parse values */
-	if ( ( rc = num_parse ( argc, argv, &first, &second ) ) != 0 )
-		return rc;
-
-	/* Return success iff first value is greater than second value */
-	return ( ( first > second ) ? 0 : -ERANGE );
+	return num_exec ( argc, argv, NUM_GT );
 }
 
-/** "numgt" command */
 COMMAND ( numgt, numgt_exec );
